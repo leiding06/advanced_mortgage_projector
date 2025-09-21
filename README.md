@@ -2,7 +2,7 @@
 
 A sophisticated mortgage calculator that factors in inflation to visualize the true long-term cost of a loan. It contrasts nominal payments with real purchasing power, providing a clearer financial picture for home buyers.
 
-## ✨ Features
+## ✨ Features (Still working on....)
 
 - **Inflation-Aware Calculations**: Input an estimated annual inflation rate to see how it affects your payments over time.
 - **Purchasing Power Analogy**: See what your future monthly payment will "feel like" in today's money (e.g., "Your £1,500 payment in 2040 will feel like £750 today").
@@ -10,9 +10,6 @@ A sophisticated mortgage calculator that factors in inflation to visualize the t
 - **Interactive Visualization**: Built-in charts to visualize how the burden of your mortgage decreases over time.
 - **Modern Tech Stack**: Built with **Next.js 14**, **TypeScript**, **Tailwind CSS**, and **Recharts** for a seamless UX.
 
-## 🚀 Getting Started
-
-... [安装和运行指令]
 
 ## 🤝 Contributing
 
