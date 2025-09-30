@@ -17,6 +17,15 @@ services:
     # Set the restart policy
     restart: always
     
+    # This mounts your local code into the container, and tells Docker to ignore
+    # the node_modules folder in the mount, ensuring dependencies stay installed inside the container.
+    volumes:
+      - .:/app
+      - /app/node_modules
+    # This runs the Next.js development server for automatic code reloading.
+    command: ["npm", "run", "dev"]
+
+    
     # Environment variables for the application to connect to the database
     environment:
       # The host is the service name 'db' defined below
