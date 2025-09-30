@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # ------------------
+  # Frontend/Application Service
+  # ------------------
+  app:
+    # Build the image using the Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    # Map the container port 3000 to the host port 3000
+    ports:
+      - "3000:3000"
+      
+    # Set the restart policy
+    restart: always
+    
+    # Environment variables for the application to connect to the database
+    environment:
+      # The host is the service name 'db' defined below
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      # Use the same credentials as defined in the 'db' service
+      DATABASE_USER: mortgageuser # All lowercase is best practice
+      DATABASE_PASSWORD: securedpassword
+      DATABASE_NAME: mortgage_project_db
+      
+    # faster local development
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
+
+  # ------------------
+  # Database Service (PostgreSQL)
+  # ------------------
+  db:
+    image: postgres:16-alpine 
+    restart: always
+    
+    # Required environment variables for PostgreSQL setup
+    environment:
+      POSTGRES_USER: mortgageuser
+      POSTGRES_PASSWORD: securedpassword
+      POSTGRES_DB: mortgage_project_db
+    
+    # Ensure data persists across container restarts by using a volume
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+# Define the volume to make database data persistent
+volumes:
+  postgres_data:
