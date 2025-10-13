@@ -1,0 +1,147 @@
+classDiagram
+    %% User Management
+    class User {
+        +int id
+        +string email
+        +string password_hash
+        +datetime created_at
+        +boolean is_premium
+        +int saved_calculations_count
+        +register()
+        +login()
+        +can_save_calculation() bool
+    }
+
+    %% Core Domain Models
+    class LoanParameters {
+        +float loan_amount
+        +int loan_term_years
+        +float annual_interest_rate
+        +float extra_deposit
+        +datetime created_at
+        +validate() bool
+    }
+
+    class SavedCalculation {
+        +int id
+        +int user_id
+        +string name
+        +LoanParameters parameters
+        +datetime saved_at
+        +datetime last_accessed
+        +save()
+        +delete()
+        +compare_with(other) dict
+    }
+
+    %% Calculation Engine
+    class MortgageCalculator {
+        +LoanParameters parameters
+        +calculate_monthly_payment() float
+        +calculate_total_repayment() float
+        +calculate_total_interest() float
+        +generate_payment_schedule() PaymentSchedule
+        +calculate_principal_vs_interest() dict
+    }
+
+    class PaymentSchedule {
+        +list~Payment~ payments
+        +int total_months
+        +float total_paid
+        +float total_interest
+        +get_payment_by_month(month) Payment
+        +to_dict() dict
+        +to_excel() bytes
+    }
+
+    class Payment {
+        +int month
+        +float principal
+        +float interest
+        +float total_payment
+        +float remaining_balance
+        +date payment_date
+    }
+
+    %% Remortgage Feature
+    class RemortgageSimulator {
+        +MortgageCalculator original_mortgage
+        +float new_interest_rate
+        +float additional_deposit
+        +int remortgage_after_months
+        +calculate_new_payment() float
+        +calculate_total_savings() float
+        +simulate_scenarios() list~RemortgageScenario~
+        +compare_with_original() dict
+    }
+
+    class RemortgageScenario {
+        +int year
+        +float new_rate
+        +float monthly_saving
+        +float total_saving
+        +float new_monthly_payment
+    }
+
+    %% Inflation Calculator
+    class InflationCalculator {
+        +float inflation_rate
+        +PaymentSchedule schedule
+        +calculate_real_value(amount, years) float
+        +adjust_payment_schedule() PaymentSchedule
+        +get_purchasing_power_chart() dict
+    }
+
+    %% Report Generation
+    class ReportGenerator {
+        +MortgageCalculator calculator
+        +RemortgageSimulator remortgage
+        +InflationCalculator inflation
+        +generate_excel() bytes
+        +generate_html() string
+        +generate_pdf() bytes
+        +include_charts(charts) void
+    }
+
+    %% External Resources
+    class ResourceLink {
+        +int id
+        +string title
+        +string url
+        +string category
+        +string description
+        +get_by_category(category) list
+    }
+
+    %% API Rate Limiting (for external callers)
+    class APIKey {
+        +string key
+        +int user_id
+        +int requests_count
+        +int rate_limit
+        +datetime last_request
+        +boolean is_valid
+        +check_rate_limit() bool
+        +increment_usage()
+    }
+
+    %% Relationships
+    User "1" --> "0..3" SavedCalculation : saves (free tier)
+    User "1" --> "0..*" SavedCalculation : saves (premium)
+    User "1" --> "0..*" APIKey : has
+    
+    SavedCalculation "1" --> "1" LoanParameters : contains
+    
+    MortgageCalculator "1" --> "1" LoanParameters : uses
+    MortgageCalculator "1" --> "1" PaymentSchedule : generates
+    
+    PaymentSchedule "1" --> "*" Payment : contains
+    
+    RemortgageSimulator "1" --> "1" MortgageCalculator : modifies
+    RemortgageSimulator "1" --> "*" RemortgageScenario : creates
+    
+    InflationCalculator "1" --> "1" PaymentSchedule : adjusts
+    
+    ReportGenerator "1" --> "1" MortgageCalculator : reads from
+    ReportGenerator "1" --> "0..1" RemortgageSimulator : reads from
+    ReportGenerator "1" --> "0..1" InflationCalculator : reads from
