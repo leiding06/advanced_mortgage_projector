@@ -1,0 +1,73 @@
+graph TB
+    subgraph "Client Layer"
+        Browser[Web Browser]
+        Mobile[Mobile Browser]
+    end
+
+    subgraph "Frontend - Vercel"
+        NextJS[Next.js Application<br/>TypeScript + React]
+        NextJS --> Components[UI Components]
+        NextJS --> Pages[Pages & Routes]
+        NextJS --> APIRoutes[API Routes<br/>Proxy Layer]
+    end
+
+    subgraph "Backend - DigitalOcean"
+        Flask[Flask API Server<br/>Python]
+        Flask --> AuthService[Auth Service<br/>JWT]
+        Flask --> CalcEngine[Calculation Engine]
+        Flask --> ReportGen[Report Generator]
+        Flask --> APILimiter[Rate Limiter<br/>Redis]
+        
+        CalcEngine --> MortgageCalc[Mortgage Calculator]
+        CalcEngine --> RemortgageCalc[Remortgage Simulator]
+        CalcEngine --> InflationCalc[Inflation Calculator]
+    end
+
+    subgraph "Data Layer - DigitalOcean"
+        PostgreSQL[(PostgreSQL<br/>User Data<br/>Saved Calculations)]
+        Redis[(Redis Cache<br/>Session Storage<br/>Rate Limiting)]
+    end
+
+    subgraph "External Services"
+        OpenAI[OpenAI API<br/>Future: AI insights]
+        EmailService[Email Service<br/>SendGrid/SES]
+    end
+
+    subgraph "File Storage"
+        LocalStorage[Local Storage<br/>Temp Excel/PDF]
+    end
+
+    %% Client connections
+    Browser --> NextJS
+    Mobile --> NextJS
+
+    %% Frontend to Backend
+    NextJS --> Flask
+    APIRoutes -.API Key Auth.-> Flask
+
+    %% Backend to Data
+    Flask --> PostgreSQL
+    Flask --> Redis
+    AuthService --> PostgreSQL
+    AuthService --> Redis
+
+    %% Backend to Services
+    ReportGen --> LocalStorage
+    Flask -.Future.-> OpenAI
+    AuthService --> EmailService
+
+    %% Docker Containers
+    classDef dockerContainer fill:#2496ED,stroke:#1D72AA,color:#fff
+    classDef vercelService fill:#000,stroke:#000,color:#fff
+    classDef database fill:#336791,stroke:#2D5A7B,color:#fff
+    classDef cache fill:#DC382D,stroke:#A92D23,color:#fff
+
+    class Flask,CalcEngine,ReportGen dockerContainer
+    class NextJS,APIRoutes vercelService
+    class PostgreSQL database
+    class Redis cache
+
+    %% Notes
+    Note1[Docker Compose:<br/>Flask + PostgreSQL + Redis]
+    Note2[Vercel Free Tier:<br/>Frontend + API Proxy]
+    Note3[External API Access:<br/>API Key Required]

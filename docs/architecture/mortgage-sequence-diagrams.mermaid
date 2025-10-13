@@ -1,0 +1,90 @@
+sequenceDiagram
+    %% Scenario 1: User Login and Calculate
+    participant U as User
+    participant F as Next.js Frontend
+    participant A as Flask API
+    participant R as Redis Cache
+    participant DB as PostgreSQL
+
+    Note over U,DB: Scenario 1: User Login & Calculate Mortgage
+
+    U->>F: 1. Navigate to login page
+    U->>F: 2. Enter email & password
+    F->>A: POST /api/auth/login<br/>{email, password}
+    A->>DB: Query user by email
+    DB-->>A: Return user data
+    A->>A: Verify password hash
+    A->>R: Store session token
+    A-->>F: Return JWT token + user info
+    F->>F: Store token in memory
+    F-->>U: Redirect to calculator
+
+    U->>F: 3. Fill loan parameters<br/>(amount, rate, term, deposit)
+    U->>F: 4. Click "Calculate"
+    F->>A: POST /api/calculate<br/>Authorization: Bearer {token}<br/>{loan_params}
+    A->>A: Validate JWT
+    A->>A: MortgageCalculator.calculate()
+    A->>A: Generate payment schedule
+    A-->>F: Return calculation results<br/>{monthly_payment, total_interest, schedule}
+    F->>F: Render charts & tables
+    F-->>U: Display results
+
+    U->>F: 5. Click "Save Calculation"
+    F->>A: POST /api/calculations/save<br/>Authorization: Bearer {token}<br/>{name, loan_params}
+    A->>A: Check user.can_save_calculation()
+    alt Free user with < 3 saves
+        A->>DB: INSERT saved_calculation
+        DB-->>A: Success
+        A-->>F: {success: true, id: 123}
+        F-->>U: "Saved successfully"
+    else Free user with 3 saves
+        A-->>F: {error: "Upgrade to premium"}
+        F-->>U: Show upgrade modal
+    end
+
+    Note over U,DB: Scenario 2: External API Call
+
+    participant API as External Software
+    participant A2 as Flask API
+    participant R2 as Redis
+    participant DB2 as PostgreSQL
+
+    API->>A2: POST /api/calculate<br/>X-API-Key: abc123xyz<br/>{loan_params}
+    A2->>R2: Check rate limit for API key
+    alt Rate limit OK
+        A2->>DB2: Verify API key exists & active
+        DB2-->>A2: API key valid
+        A2->>A2: MortgageCalculator.calculate()
+        A2->>R2: Increment usage counter
+        A2-->>API: Return calculation results<br/>{monthly_payment, schedule}
+    else Rate limit exceeded
+        A2-->>API: 429 Too Many Requests<br/>{error: "Rate limit exceeded"}
+    end
+
+    Note over U,DB: Scenario 3: Generate & Download Excel Report
+
+    U->>F: 1. View calculation results
+    U->>F: 2. Click "Download Excel Report"
+    F->>A: POST /api/reports/excel<br/>Authorization: Bearer {token}<br/>{calculation_id}
+    A->>DB: Fetch saved calculation
+    DB-->>A: Return calculation data
+    A->>A: ReportGenerator.generate_excel()
+    A->>A: Create payment schedule table
+    A->>A: Add charts (principal vs interest)
+    A->>A: Generate bytes in memory
+    A-->>F: Return file bytes<br/>Content-Type: application/vnd.ms-excel
+    F->>F: Create download link
+    F-->>U: Browser downloads file<br/>"mortgage_report_2025.xlsx"
+
+    Note over U,DB: Scenario 4: Remortgage Simulation
+
+    U->>F: 1. On results page, click "Simulate Remortgage"
+    U->>F: 2. Enter new rate & additional deposit
+    F->>A: POST /api/remortgage/simulate<br/>Authorization: Bearer {token}<br/>{original_calc_id, new_rate, extra_deposit}
+    A->>DB: Fetch original calculation
+    DB-->>A: Return original loan params
+    A->>A: RemortgageSimulator.calculate()
+    A->>A: Compare original vs new scenarios
+    A-->>F: Return comparison data<br/>{monthly_saving, total_saving, new_schedule}
+    F->>F: Render comparison charts
+    F-->>U: Display side-by-side comparison
